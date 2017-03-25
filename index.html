@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Geonym</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="mapid" style="width: 100%; height: 600px;"></div>
+
+<script>
+	var map = L.map('mapid').setView([46.27, 2.34], 7);
+
+  var grid_north = 51.45;
+  var grid_west = -5.45
+  var grid_south = 41.27;
+  var grid_east = 9.85;
+  var grid_w = grid_east-grid_west;
+  var grid_h = grid_north-grid_south;
+  // 45678
+  // 3MPR9
+  // 2LXTC
+  // 1KWVD
+  // 0JHGF
+  var grid_alpha = "456783MPR92LXTC1KWVD0JHGF";
+  var grid_color = [];
+
+  // regexp [45673MPR92LXTCKWVDJHGF][456783MPR92LXTC1KWVD0JHGF]*
+
+  function drawGrid(north, south, west, east, alpha) {
+    grid.clearLayers();
+    north = (grid_north-Math.min(north,grid_north))/grid_h;
+    south = (grid_north-Math.max(south,grid_south))/grid_h;
+    west = (Math.max(west,grid_west)-grid_west)/grid_w;
+    east = (Math.min(east,grid_east)-grid_west)/grid_w;
+    level = alpha.length+1;
+
+    for (w = Math.floor(west*5); w<Math.ceil(east*5); w++) {
+      for (h = Math.floor(north*5); h<Math.ceil(south*5);h++) {
+        t = grid_north - (grid_h/5*h);
+        l = grid_west + (grid_w/5*w);
+        a = grid_alpha.substr(h*5+w,1);
+        if (map.getZoom() > 6) {
+          for (w2 = 0; w2<5; w2++) {
+            for (h2 = 0; h2<5;h2++) {
+              t2 = t - (grid_h/25*h2);
+              l2 = l + (grid_w/25*w2);
+              a2 = a + grid_alpha.substr(h2*5+w2,1);
+              if (map.getZoom() > 8) {
+                for (w3 = 0; w3<5; w3++) {
+                  for (h3 = 0; h3<5;h3++) {
+                    t3 = t2 - (grid_h/125*h3);
+                    l3 = l2 + (grid_w/125*w3);
+                    a3 = a2 + grid_alpha.substr(h3*5+w3,1);
+                    L.rectangle([[t3,l3],[t3-grid_h/125,l3+grid_w/125]]).addTo(grid).bindTooltip(a3);
+                  }
+                }
+              } else L.rectangle([[t2,l2],[t2-grid_h/25,l2+grid_w/25]]).addTo(grid).bindTooltip(a2);
+            }
+          }
+        } else L.rectangle([[t,l],[t-grid_h/5,l+grid_w/5]]).addTo(grid).bindTooltip(a);
+      }
+    }
+  }
+
+	L.tileLayer('https://tilecache.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors under ODbL, ' +
+			'map tiles &copy; OSM-FR',
+		id: 'fr'
+	}).addTo(map);
+  var grid = L.layerGroup([]).addTo(map);
+
+  map.on('zoomend', function() {
+      drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
+  });
+  drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
+
+</script>
+
+</body>
+</html>
