@@ -7,13 +7,19 @@
 	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
 	<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+
+  <style>
+    body { margin:0; padding:0; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+  </style>
+
 </head>
 <body>
 
-<div id="mapid" style="width: 100%; height: 600px;"></div>
+<div id="map"></div>
 
-<script>
-	var map = L.map('mapid').setView([46.27, 2.34], 7);
+<script type='text/javascript'>
+	var map = L.map('map').setView([46.27, 2.34], 7);
 
   var grid_north = 51.45;
   var grid_west = -5.45
@@ -79,9 +85,6 @@
 	}).addTo(map);
   var grid = L.layerGroup([]).addTo(map);
 
-  map.on('zoomend', function() {
-      drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
-  });
   map.on('moveend', function() {
       drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
   });
