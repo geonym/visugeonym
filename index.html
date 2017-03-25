@@ -22,14 +22,18 @@
   var grid_w = grid_east-grid_west;
   var grid_h = grid_north-grid_south;
   // 45678
-  // 3MPR9
-  // 2LXTC
-  // 1KWVD
-  // 0JHGF
-  var grid_alpha = "456783MPR92LXTC1KWVD0JHGF";
-  var grid_color = [];
+  // 3NPR9
+  // 2MXTC
+  // 1LWVD
+  // 0KJHF
+  var grid_alpha = "456783NPR92MXTC1LWVD0KJHF";
+  var grid_color = ["#FF6600","#FF8000","#FF9900","#FFB200","#FFCC00",
+                    "#FF4C00","#305DCF","#4040FF","#6633FF","#FFE500",
+                    "#FF3300","#207A9F","#FF00FF","#8C26FF","#FFFF00",
+                    "#FF1900","#10976F","#D80CFF","#B219FF","#CCF00C",
+                    "#FF0000","#00B440","#33C333","#66D226","#99E119"];
 
-  // regexp [45673MPR92LXTCKWVDJHGF][456783MPR92LXTC1KWVD0JHGF]*
+  // regexp [45673NPR92MXTCLWVDKJHF][456783NPR92MXTC1LWVD0KJHF]*
 
   function drawGrid(north, south, west, east, alpha) {
     grid.clearLayers();
@@ -56,13 +60,13 @@
                     t3 = t2 - (grid_h/125*h3);
                     l3 = l2 + (grid_w/125*w3);
                     a3 = a2 + grid_alpha.substr(h3*5+w3,1);
-                    L.rectangle([[t3,l3],[t3-grid_h/125,l3+grid_w/125]]).addTo(grid).bindTooltip(a3);
+                    L.rectangle([[t3,l3],[t3-grid_h/125,l3+grid_w/125]],{weight: 1, fillOpacity: 0.33, fillColor: grid_color[h3*5+w3]}).addTo(grid).bindTooltip(a3);
                   }
                 }
-              } else L.rectangle([[t2,l2],[t2-grid_h/25,l2+grid_w/25]]).addTo(grid).bindTooltip(a2);
+              } else L.rectangle([[t2,l2],[t2-grid_h/25,l2+grid_w/25]],{weight: 1,fillOpacity: 0.33,fillColor: grid_color[h2*5+w2]}).addTo(grid).bindTooltip(a2);
             }
           }
-        } else L.rectangle([[t,l],[t-grid_h/5,l+grid_w/5]]).addTo(grid).bindTooltip(a);
+        } else L.rectangle([[t,l],[t-grid_h/5,l+grid_w/5]],{weight: 1,fillOpacity: 0.33,fillColor: grid_color[h*5+w]}).addTo(grid).bindTooltip(a);
       }
     }
   }
@@ -76,6 +80,9 @@
   var grid = L.layerGroup([]).addTo(map);
 
   map.on('zoomend', function() {
+      drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
+  });
+  map.on('moveend', function() {
       drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
   });
   drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
