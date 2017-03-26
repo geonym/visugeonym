@@ -4,9 +4,10 @@
 	<title>Geonym</title>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+	<link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico" />
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
 	<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+  <script src="leaflet-hash/leaflet-hash.js"></script>
 
   <style>
     body { margin:0; padding:0; }
@@ -19,8 +20,6 @@
 <div id="map"></div>
 
 <script type='text/javascript'>
-	var map = L.map('map').setView([46.27, 2.34], 7);
-
   var grid_north = 51.45;
   var grid_west = -5.45
   var grid_south = 41.27;
@@ -38,47 +37,56 @@
                     "#FF3300","#207A9F","#FF00FF","#8C26FF","#FFFF00",
                     "#FF1900","#10976F","#D80CFF","#B219FF","#CCF00C",
                     "#FF0000","#00B440","#33C333","#66D226","#99E119"];
+  var grid_levels = [1,1,1,1,1,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,8];
 
   // regexp [45673NPR92MXTCLWVDKJHF][456783NPR92MXTC1LWVD0KJHF]*
 
   function drawGrid(north, south, west, east, alpha) {
-    grid.clearLayers();
-    north = (grid_north-Math.min(north,grid_north))/grid_h;
-    south = (grid_north-Math.max(south,grid_south))/grid_h;
-    west = (Math.max(west,grid_west)-grid_west)/grid_w;
-    east = (Math.min(east,grid_east)-grid_west)/grid_w;
-    level = alpha.length+1;
+    if (north<map.getBounds().getSouth() || south>map.getBounds().getNorth() || west >map.getBounds().getEast() || east < map.getBounds().getWest()) {
+      return;
+    }
 
-    for (w = Math.floor(west*5); w<Math.ceil(east*5); w++) {
-      for (h = Math.floor(north*5); h<Math.ceil(south*5);h++) {
-        t = grid_north - (grid_h/5*h);
-        l = grid_west + (grid_w/5*w);
-        a = grid_alpha.substr(h*5+w,1);
-        if (map.getZoom() > 6) {
-          for (w2 = 0; w2<5; w2++) {
-            for (h2 = 0; h2<5;h2++) {
-              t2 = t - (grid_h/25*h2);
-              l2 = l + (grid_w/25*w2);
-              a2 = a + grid_alpha.substr(h2*5+w2,1);
-              if (map.getZoom() > 8) {
-                for (w3 = 0; w3<5; w3++) {
-                  for (h3 = 0; h3<5;h3++) {
-                    t3 = t2 - (grid_h/125*h3);
-                    l3 = l2 + (grid_w/125*w3);
-                    a3 = a2 + grid_alpha.substr(h3*5+w3,1);
-                    L.rectangle([[t3,l3],[t3-grid_h/125,l3+grid_w/125]],{weight: 1, fillOpacity: 0.33, fillColor: grid_color[h3*5+w3]}).addTo(grid).bindTooltip(a3);
-                  }
-                }
-              } else L.rectangle([[t2,l2],[t2-grid_h/25,l2+grid_w/25]],{weight: 1,fillOpacity: 0.33,fillColor: grid_color[h2*5+w2]}).addTo(grid).bindTooltip(a2);
-            }
-          }
-        } else L.rectangle([[t,l],[t-grid_h/5,l+grid_w/5]],{weight: 1,fillOpacity: 0.33,fillColor: grid_color[h*5+w]}).addTo(grid).bindTooltip(a);
+    var level, grid_s,grid_t,grid_l,w,h,t,l,a,north_g,south_g,west_g,east_g;
+
+    level = alpha.length+1;
+    grid_s = Math.pow(5,level);
+    if (level == 1) {
+      grid_t = grid_north;
+      grid_l = grid_west
+      north_g = (grid_t-Math.min(north,grid_t))/grid_h;
+      south_g = (grid_t-Math.max(south,grid_t-grid_h))/grid_h;
+      west_g = (Math.max(west,grid_l)-grid_l)/grid_w;
+      east_g = (Math.min(east,grid_l+grid_w)-grid_l)/grid_w;
+    }
+    else {
+      grid_t = north;
+      grid_l = west;
+      north_g = 0;
+      west_g = 0;
+      east_g = 1;
+      south_g = 1;
+    }
+
+    for (w = Math.floor(west_g*5); w<Math.ceil(east_g*5); w++) {
+      for (h = Math.floor(north_g*5); h<Math.ceil(south_g*5);h++) {
+        t = grid_t - (grid_h/grid_s*h);
+        l = grid_l + (grid_w/grid_s*w);
+        a = alpha+grid_alpha.substr(h*5+w,1);
+        if (level < grid_levels[map.getZoom()]) {
+          if (level = grid_levels[map.getZoom()]-1)
+            L.rectangle([[t,l],[t-grid_h/grid_s,l+grid_w/grid_s]],{weight: 2, color: 'black', fillOpacity: 0}).addTo(grid);
+          drawGrid(t,t-grid_h/grid_s,l,l+grid_w/grid_s,a);
+        }
+        else
+          L.rectangle([[t,l],[t-grid_h/grid_s,l+grid_w/grid_s]],{weight: 0.5,color: 'grey', fillOpacity: (level < 8 ? 0.25 : 0),fillColor: grid_color[h*5+w]}).addTo(grid).bindTooltip(a.length > 4 ? a.substr(0,4)+'-'+a.substr(4): a );
       }
     }
   }
 
+  var map = L.map('map').setView([(grid_north+grid_south)/2, (grid_west+grid_east)/2], 6);
+  var hash = new L.Hash(map);
 	L.tileLayer('https://tilecache.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-		maxZoom: 18,
+		maxZoom: 20,
 		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors under ODbL, ' +
 			'map tiles &copy; OSM-FR',
 		id: 'fr'
@@ -86,7 +94,8 @@
   var grid = L.layerGroup([]).addTo(map);
 
   map.on('moveend', function() {
-      drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
+    grid.clearLayers();
+    drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
   });
   drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
 
