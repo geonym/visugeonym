@@ -8,6 +8,8 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
 	<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
   <script src="leaflet-hash/leaflet-hash.js"></script>
+  <script src="leaflet.photon/leaflet.photon.js"></script>
+  <link rel="stylesheet" href="leaflet.photon/leaflet.photon.css" />
 
   <style>
     body { margin:0; padding:0; }
@@ -83,7 +85,67 @@
     }
   }
 
-  var map = L.map('map').setView([(grid_north+grid_south)/2, (grid_west+grid_east)/2], 6);
+  // autocomplétion adresse
+
+    var MAXZOOM = 18;
+    var SHORT_CITY_NAMES = ['y', 'ay', 'bu', 'by', 'eu', 'fa', 'gy', 'oo', 'oz', 'py', 'ri', 'ry', 'sy', 'ur', 'us', 'uz'];
+    var API_URL = 'https://api-adresse.data.gouv.fr/search?';
+
+    var searchPoints = L.geoJson(null, {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(feature.properties.label);
+            }
+        });
+
+    var showSearchPoints = function (geojson) {
+        searchPoints.clearLayers();
+        searchPoints.addData(geojson);
+    };
+
+    var formatResult = function (feature, el) {
+        var title = L.DomUtil.create('strong', '', el),
+            detailsContainer = L.DomUtil.create('small', '', el),
+            details = [];
+        title.innerHTML = feature.properties.label || feature.properties.name;
+        var types = {
+            housenumber: 'numéro',
+            street: 'rue',
+            locality: 'lieu-dit',
+            hamlet: 'hameau',
+            village: 'village',
+            city: 'ville',
+            commune: 'commune',
+            municipality: 'commune'
+        };
+        //if (types[feature.properties.type]) L.DomUtil.create('span', 'type', title).innerHTML = types[feature.properties.type];
+        if (feature.properties.city && feature.properties.city !== feature.properties.name) {
+            details.push(feature.properties.city);
+        }
+        if (feature.properties.context) details.push(feature.properties.context);
+        detailsContainer.innerHTML = details.join(', ');
+    };
+
+
+    var photonControlOptions = {
+        resultsHandler: showSearchPoints,
+        placeholder: 'Ex. 6 quai de la tourelle cergy…',
+        position: 'topright',
+        url: API_URL,
+        formatResult: formatResult,
+        noResultLabel: 'Aucun résultat',
+        feedbackLabel: 'Signaler',
+        feedbackEmail: '',
+        minChar: function (val) {
+          console.log(val.replace(/[0-9 ]/g,''));
+          return SHORT_CITY_NAMES.indexOf(val) !== -1 || val.replace(/[0-9 ]/g,'').length >= 3;
+        },
+        submitDelay: 200
+    };
+
+
+  var map = L.map('map',{
+  photonControl: true,
+  photonControlOptions: photonControlOptions }).setView([(grid_north+grid_south)/2, (grid_west+grid_east)/2], 6);
   var hash = new L.Hash(map);
 	L.tileLayer('http://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
 		maxZoom: 20,
@@ -98,6 +160,9 @@
     drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
   });
   drawGrid(map.getBounds().getNorth(),map.getBounds().getSouth(),map.getBounds().getWest(),map.getBounds().getEast(),'');
+
+  searchPoints.addTo(map);
+
 
 </script>
 
