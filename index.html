@@ -41,7 +41,6 @@
                     "#FF0000","#00B440","#33C333","#66D226","#99E119"];
   var grid_levels = [1,1,1,1,1,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,8];
 
-  // regexp [45673NPR92MXTCLWVDKJHF][456783NPR92MXTC1LWVD0KJHF]*
 
   function drawGrid(north, south, west, east, alpha) {
     if (north<map.getBounds().getSouth() || south>map.getBounds().getNorth() || west >map.getBounds().getEast() || east < map.getBounds().getWest()) {
@@ -154,6 +153,24 @@
 		id: 'fr'
 	}).addTo(map);
   var grid = L.layerGroup([]).addTo(map);
+
+	var params = {}
+	location.search.substr(1).split("&").forEach(function(item) {params[item.split("=")[0]] = item.split("=")[1]})
+	if (params.g) {
+		var xhr = new XMLHttpRequest();
+
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4 && (xhr.status == 200 || xhr.status == 0)) {
+				gn = JSON.parse(xhr.responseText);
+				var gJson = L.geoJson(gn, {style: function (feature) { return {color: 'yellow', opacity: 1, fillOpacity: 0.25};},}).addTo(map);
+				gJson.bringToFront();
+				map.fitBounds(gJson.getBounds());
+			}
+		};
+
+		xhr.open("GET", "http://api.geonym.fr/"+params.g, true);
+		xhr.send(null);
+	}
 
   map.on('moveend', function() {
     grid.clearLayers();
