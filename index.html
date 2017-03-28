@@ -164,7 +164,7 @@
 				gn = JSON.parse(xhr.responseText);
 				var gJson = L.geoJson(gn, {style: function (feature) { return {color: 'yellow', opacity: 1, fillOpacity: 0.25};},}).addTo(map);
 				gJson.bringToFront();
-				map.fitBounds(gJson.getBounds());
+				map.fitBounds(gJson.getBounds(),  {padding: [50,50]});
 			}
 		};
 
