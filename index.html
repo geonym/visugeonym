@@ -80,7 +80,7 @@
           drawGrid(t,t-grid_h/grid_s,l,l+grid_w/grid_s,a);
         }
         else
-          L.rectangle([[t,l],[t-grid_h/grid_s,l+grid_w/grid_s]],{weight: 0.5,color: 'grey', fillOpacity: (level < 8 ? 0.25 : 0),fillColor: grid_color[h*5+w]}).addTo(grid).bindTooltip(a.length > 4 ? a.substr(0,4)+'-'+a.substr(4): a );
+          L.rectangle([[t,l],[t-grid_h/grid_s,l+grid_w/grid_s]],{weight: 0.5, color: 'grey', fillOpacity: (Math.max(0.4 - 0.1*level,0)),fillColor: grid_color[h*5+w]}).addTo(grid).bindTooltip(a.length > 4 ? a.substr(0,4)+'-'+a.substr(4): a );
       }
     }
   }
